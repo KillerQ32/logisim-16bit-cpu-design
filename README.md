@@ -1,120 +1,131 @@
+# 16-bit Logisim CPU Project
 
-# 🧠 16-bit Logisim CPU Project
+## Project Description
 
-An educational 16-bit single-cycle RISC-like CPU built using Logisim. The design simulates a functional CPU from scratch, implementing the full datapath and control logic to support a custom instruction set.
+This is a 16-bit single-cycle RISC-style CPU designed and implemented in Logisim Evolution. It’s built from the ground up to simulate the execution pipeline of a basic CPU architecture, including custom-designed components like the ALU, Register File, PC, ROM, and Instruction Register.
 
----
-
-## ✅ Project Summary
-
-This CPU project implements:
-
-- A **16-bit word size**
-- A **single-cycle datapath**
-- **16 general-purpose registers** (R0–R15)
-- **1024-word ROM and RAM**
-- A **custom hardwired control unit**
-- A small but expressive **instruction set architecture (ISA)** with arithmetic, logic, memory, and control flow instructions
+The goal is to understand how core hardware elements interact to execute instructions and form the basic datapath of a CPU. Every component was either built from primitives or designed to support modular development.
 
 ---
 
-## 🏗️ Build Log
+## Architecture Overview
 
-### ✅ Phase 1: Core Components
-- **Program Counter (PC)**
-  - 16-bit register that auto-increments.
-  - Output wired to ROM for instruction fetch.
-- **ROM (Instruction Memory)**
-  - 1024 × 16-bit ROM using Logisim’s built-in ROM component.
-  - Loads `.hex` programs written to match ISA encoding.
-- **Instruction Register (IR)**
-  - Captures the instruction each cycle.
-  - Output split using a bit splitter into opcode, destination, sources, and immediate.
-
-### ✅ Phase 2: Decode + Control
-- **Instruction Splitter**
-  - Extracts opcode (15-12), destination reg, src1, src2/immediate.
-- **Control Unit**
-  - Fully hardwired combinational logic using the ISA control truth table.
-  - Outputs: `RegWrite`, `MemRead`, `MemWrite`, `MemToReg`, `ALUSrc`, `Branch`, `ALUOp[3:0]`
-
-### ✅ Phase 3: Register File
-- **16-register bank** (R0–R15), each 16 bits.
-- Dual-read, single-write.
-- Controlled by `RegWrite`, with decoded addresses for each port.
-
-### ✅ Phase 4: ALU and Support Logic
-- **ALU Operations Implemented:**
-  - ADD, SUB, AND, OR, XOR, SLT, SLL, SRL
-- **ALU Input MUX**
-  - Selects between register and sign-extended immediate (based on `ALUSrc`)
-- **Sign Extender**
-  - Converts 4-bit immediate to 16-bit signed value using replicator + joiner
-- **Zero Detector**
-  - NOR gate for detecting equality in BEQ
-- **SLT Logic**
-  - Subtracts A - B and uses the sign bit to determine if A < B
-
-### ✅ Phase 5: Memory and Write-Back
-- **Data Memory (RAM)**
-  - 1024 × 16-bit, controlled by `MemRead` and `MemWrite`
-- **Write-back MUX**
-  - Chooses between ALU result and memory read data
-
-### ✅ Phase 6: Branching and PC Logic
-- **Comparator Unit (for BEQ)**
-  - Subtracts and checks if zero
-- **Branch Logic**
-  - PC update logic using:
-    - PC + 1 (default)
-    - PC + Sign-Extended Immediate (if branch taken)
-  - Controlled via Branch signal and comparator
+- Word Size: 16 bits  
+- Instruction Set: Custom RISC-like with arithmetic, logic, memory, and control instructions  
+- Registers: 16 general-purpose 16-bit registers (R0–R15)  
+- Memory:  
+  - Instruction Memory (ROM): 1024 words  
+  - Data Memory (RAM): 1024 words  
+- Instruction Types: R-Type and I-Type  
+- Clock: Single-cycle synchronous  
+- Control: Hardwired combinational logic (to be built)
 
 ---
 
-## 🧪 Testing and Observations
+## Completed Core Components (with Rationale)
 
-### Test Program:
-```
-1025 ; ADDI R1, 5  
-102A ; ADDI R2, 10  
-1320 ; ADD R3 = R1 + R2  
-7300 ; STORE R3 to MEM[0]  
-6400 ; LOAD MEM[0] into R4  
-8340 ; BEQ R3, R4  
-```
-
-### Observations:
-
-- ✅ Registers update and write correctly.
-- ✅ ALU operates as expected on all logic and arithmetic ops.
-- ✅ Memory reads/writes function with correct addresses.
-- ✅ Branching works and correctly updates PC based on BEQ comparison.
-- 🔎 **Important Note:** SLT works by checking the sign bit of `A - B`. If negative, it outputs `x0001`; otherwise, `x0000`.
-- 🧪 SLL/SRL confirmed working once ALU implemented final logic.
-- ✅ Immediate sign-extension critical to correct memory addressing and branching.
-- 🛠️ Careful bit-splitting and labeling were essential to avoid wiring bugs.
+### 1. Program Counter (PC)
+- What It Does: Holds the address of the current instruction; increments each cycle.
+- Why: Drives instruction fetch by generating addresses for ROM.
+- Details: 16-bit counter wired with jump address and clock control.
 
 ---
 
-## 📦 Repository Structure (Suggested)
-
-```
-📁 cpu-logisim/
-├── README.md
-├── cpu.circ            # Logisim circuit file
-├── test_rom.hex        # Sample program
-├── images/             # Screenshots of modules
-└── notes.txt           # Build notes and scratchpad
-```
+### 2. ROM (Instruction Memory)
+- What It Does: Stores 1024 16-bit instructions.
+- Why: Simulates program memory and allows for real test programs.
+- Details: ROM is addressed by the PC. Instructions are hardcoded using hex values.
 
 ---
 
-## 📘 Future Plans
-
-- [ ] Add Pipeline (IF/ID/EX/MEM/WB)
-- [ ] Forwarding Unit
-- [ ] Hazard Detection
-- [ ] Enhanced test suite with more branching and load/store variety
+### 3. Instruction Register (IR)
+- What It Does: Temporarily stores the instruction fetched from ROM.
+- Why: Needed to decode instruction and distribute fields (opcode, regs, imm).
+- Details: Connected directly to ROM output.
 
 ---
+
+### 4. Register File
+- What It Does: Stores 16 general-purpose 16-bit registers.
+- Why: Used for holding temporary values, operands, and computation results.
+- Details: Supports dual read ports, single write port, write enable, and clocked writes.
+
+---
+
+### 5. ALU
+- What It Does: Performs arithmetic and logic operations (ADD, SUB, AND, OR, XOR, SLT).
+- Why: Central to executing instructions like ADD, BEQ, etc.
+- Details: Submodules include 16-bit adder, subtractor, logic gates, and SLT logic. Sign-bit logic for SUB works using two's complement.
+
+---
+
+### 6. Shift Operations
+- What It Does: Logical Shift Left and Shift Right (16-bit).
+- Why: May support future instructions or extensions.
+- Details: Custom-built components validated with test vectors.
+
+---
+
+## Work In Progress / To Be Verified
+
+### Sign Extender
+- Status: Not confirmed yet
+- What It Should Do: Sign-extend 4-bit immediate to 16-bit
+- Needed For: I-Type instructions like LOAD, STORE, BEQ
+
+---
+
+## Project Observations
+
+- Instruction Format Mastery: Splitting 16-bit instructions helped solidify bit-field encoding concepts.
+- Two’s Complement Logic: Built subtraction and sign-detection using full adders and inversions.
+- Design Confidence: Every component added was tested incrementally and interacts correctly with existing components.
+
+---
+
+## Components To Build Next
+
+| Component           | Purpose                                                                 |
+|---------------------|-------------------------------------------------------------------------|
+| Control Unit        | Combinational logic based on opcode to generate all control signals     |
+| ALU Input MUX       | Choose between Register B or Sign-Extended Immediate                    |
+| Data Memory         | RAM for LOAD/STORE operations                                           |
+| Write-Back MUX      | Choose between ALU result and memory read for writing back to reg       |
+| Branch Comparator   | Used for BEQ; checks if regA == regB                                    |
+| PC Update Logic     | Uses Adder and MUX to decide next PC (PC+1 or PC+offset)                |
+
+---
+
+## Testing Plan
+
+Sample ROM program will test:
+- ADDI, ADD
+- STORE / LOAD (RAM)
+- BEQ (branch logic)
+- Correct data flow from instruction fetch to register write-back
+
+---
+
+## Commit Log Summary
+
+- feat: created 16-bit PC with ROM integration
+- feat: added and wired ROM with example instructions
+- feat: implemented Instruction Register
+- feat: built 16x16-bit Register File
+- feat: completed ALU with all logic and arithmetic operations
+- feat: implemented shift operations (left/right)
+
+---
+
+## Conclusion
+
+This project demonstrates bottom-up CPU design and helps develop a deep understanding of computer architecture fundamentals. With the foundational modules built and validated, the next step is wiring the datapath and adding the control logic to make the CPU fully functional.
+
+---
+
+## File Info
+
+- Tool Used: Logisim Evolution v3.9.0  
+- Circuit Name: CPU.circ  
+- Status: Core logic built, control logic and memory access in progress
+
